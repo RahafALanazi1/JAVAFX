@@ -1,32 +1,28 @@
-package com.mycompany.lap6;
-import javafx.application.Application;
+package com.mycompany.its3;
+
+ import javafx.application.Application;
+ import javafx.geometry.Insets;
  import javafx.scene.Scene;
- import javafx.scene.layout.*;
- import javafx.scene.paint.Color;
- import javafx.scene.shape.Circle;
- import javafx.scene.text.*;
- import javafx.scene.control.*;
+ import javafx.scene.control.Label;
+ import javafx.scene.control.TextField;
+ import javafx.scene.layout.FlowPane;
  import javafx.stage.Stage;
  public class App extends Application {
    @Override
-   public void start(Stage primaryStage) {    
-   Pane pane = new StackPane();
-   Circle circle = new Circle(); 
-   circle.setRadius(50);
-   circle.setStroke(Color.BLACK);
-   circle.setFill(new Color(0.5, 0.5, 0.5, 0.1));
-   pane.getChildren().add(circle);
-   Label label = new Label("JavaFX"); 
-   label.setFont(Font.font("Times New Roman",
-   FontWeight.BOLD, 20));
-   pane.getChildren().add(label);
-   Scene scene = new Scene(pane);
-   primaryStage.setTitle("FontDemo"); 
+   public void start(Stage primaryStage) {
+   FlowPane pane = new FlowPane();
+   pane.setPadding(new Insets(11, 12, 13, 14));
+   pane.setHgap(7); 
+   pane.setVgap(7);
+     pane.getChildren().addAll(new Label("first Name:"),
+     new TextField(), new Label("MI:"));
+   TextField tfMi = new TextField();
+   tfMi.setPrefColumnCount(2);
+   pane.getChildren().addAll(tfMi, new Label("last Name:"),
+     new TextField());  
+   Scene scene = new Scene(pane, 240, 290);
+   primaryStage.setTitle("RA");
    primaryStage.setScene(scene); 
- 
-   primaryStage.show();
+   primaryStage.show(); 
  }
-   public static void main(String[] args) {
-       launch();
-   }
  }
