@@ -1,0 +1,322 @@
+package com.mycompany.its3;
+import javafx.application.Application;
+import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
+import javafx.geometry.*;
+import javafx.scene.Scene;
+import javafx.scene.control.*;
+import javafx.scene.effect.Glow;
+import javafx.scene.layout.*;
+import javafx.scene.paint.Color;
+import javafx.scene.text.Font;
+import javafx.scene.text.Text;
+import javafx.stage.Stage;
+import javafx.util.Duration;
+import javafx.animation.*;
+
+import java.util.*;
+
+public class App extends Application {
+
+    Stage mainStage;
+
+    // ========== Tic Tac Toe ==========
+    Button[][] buttons = new Button[3][3];
+    boolean isXTurn = true;
+    Text statusText, scoreText;
+    int playerXScore = 0, playerOScore = 0;
+    boolean gameOver = false;
+    boolean playAgainstAI = true;
+
+    // ========== Car Info ==========
+    Map<String, String> carsData = new LinkedHashMap<>();
+    ObservableList<String> carsList;
+    Text totalCarsText, selectedCarNumber;
+    ListView<String> carListView;
+
+    public static void main(String[] args) {
+        launch(args);
+    }
+
+    @Override
+    public void start(Stage primaryStage) {
+        this.mainStage = primaryStage;
+        primaryStage.setScene(createMainScene());
+        primaryStage.setTitle("Kids Learning Program");
+        primaryStage.show();
+    }
+
+    // ========== Main Scene ==========
+    private Scene createMainScene() {
+        VBox root = new VBox(25);
+        root.setAlignment(Pos.CENTER);
+        root.setStyle("-fx-background-color: #F0F8FF;");
+        root.setPadding(new Insets(50));
+
+        Text title = new Text("Kids Learning Program");
+        title.setFont(Font.font("Verdana", 32));
+        title.setFill(Color.DARKSLATEBLUE);
+
+        Button gameBtn = new Button("Tic Tac Toe Game");
+        Button carBtn = new Button("Car Information");
+        Button storyBtn = new Button("Stories");
+
+        List<Button> buttons = List.of(gameBtn, carBtn, storyBtn);
+        for (Button btn : buttons) {
+            btn.setPrefWidth(260);
+            btn.setFont(Font.font("Arial", 18));
+            btn.setStyle("-fx-background-color: #ADD8E6; -fx-text-fill: #000080; -fx-font-weight: bold;");
+        }
+gameBtn.setOnAction(e -> mainStage.setScene(createTicTacToeScene()));
+        carBtn.setOnAction(e -> mainStage.setScene(createCarInfoScene()));
+        storyBtn.setOnAction(e -> mainStage.setScene(createStoryScene()));
+
+        root.getChildren().addAll(title, gameBtn, carBtn, storyBtn);
+        return new Scene(root, 600, 500);
+    }
+
+    // ========== Tic Tac Toe ==========
+    private Scene createTicTacToeScene() {
+        Pane root = new Pane();
+        root.setStyle("-fx-background-color: #F8F8FF;");
+        Scene scene = new Scene(root, 500, 600);
+
+        statusText = new Text("Player X's Turn");
+        statusText.setFont(Font.font(20));
+        statusText.setX(20); statusText.setY(30);
+
+        scoreText = new Text("Player X: 0 | Player O: 0");
+        scoreText.setFont(Font.font(20));
+        scoreText.setX(270); scoreText.setY(30);
+GridPane grid = new GridPane();
+        grid.setLayoutX(50); grid.setLayoutY(60);
+        grid.setVgap(10); grid.setHgap(10);
+
+        for (int i = 0; i < 3; i++)
+            for (int j = 0; j < 3; j++) {
+                Button button = new Button("");
+                button.setMinSize(120, 120);
+                button.setStyle("-fx-font-size: 36; -fx-background-color: #DDEEFF;");
+                int finalI = i, finalJ = j;
+                button.setOnAction(e -> handleButtonClick(finalI, finalJ, button));
+                buttons[i][j] = button;
+                grid.add(button, j, i);
+            }
+
+        Button backBtn = new Button("Back");
+        backBtn.setLayoutX(200);
+        backBtn.setLayoutY(560);
+        backBtn.setOnAction(e -> mainStage.setScene(createMainScene()));
+
+        root.getChildren().addAll(statusText, scoreText, grid, backBtn);
+        return scene;
+    }
+
+    private void handleButtonClick(int i, int j, Button button) {
+        if (button.getText().equals("") && !gameOver) {button.setText(isXTurn ? "X" : "O");
+            button.setStyle(isXTurn ? "-fx-text-fill: red;" : "-fx-text-fill: blue;");
+            button.setEffect(new Glow(isXTurn ? 1.0 : 0.5));
+            isXTurn = !isXTurn;
+            statusText.setText(isXTurn ? "Player X's Turn" : "Player O's Turn");
+            checkGameStatus();
+
+            if (!isXTurn && playAgainstAI && !gameOver) {
+                PauseTransition pause = new PauseTransition(Duration.seconds(0.5));
+                pause.setOnFinished(e -> aiMove());
+                pause.play();
+            }
+        }
+    }
+
+    private void aiMove() {
+        int[] move = findBestMove();
+        if (move[0] != -1)
+            buttons[move[0]][move[1]].fire();
+    }
+
+    private void checkGameStatus() {
+        if (checkForWinner()) {
+            String winner = isXTurn ? "Player O" : "Player X";
+            updateScore(winner);
+            showEndGameMessage(winner + " Wins!");
+            gameOver = true;
+        } else if (checkForDraw()) {
+            showEndGameMessage("It's a Draw!");
+            gameOver = true;
+        }
+    }
+
+    private boolean checkForWinner() {
+        for (int i = 0; i < 3; i++) {
+            if (!buttons[i][0].getText().equals("") &&
+                buttons[i][0].getText().equals(buttons[i][1].getText()) &&
+                buttons[i][1].getText().equals(buttons[i][2].getText())) return true;
+            if (!buttons[0][i].getText().equals("") &&
+                buttons[0][i].getText().equals(buttons[1][i].getText()) &&
+                buttons[1][i].getText().equals(buttons[2][i].getText())) return true;
+        }
+        if (!buttons[0][0].getText().equals("") &&
+            buttons[0][0].getText().equals(buttons[1][1].getText()) &&
+            buttons[1][1].getText().equals(buttons[2][2].getText())) return true;
+        if (!buttons[0][2].getText().equals("") &&
+            buttons[0][2].getText().equals(buttons[1][1].getText()) &&
+            buttons[1][1].getText().equals(buttons[2][0].getText())) return true;
+        return false;
+    }
+
+    private boolean checkForDraw() {
+        for (Button[] row : buttons)
+            for (Button b : row)
+                if (b.getText().equals("")) return false;
+        return true;
+    }
+private void updateScore(String winner) {
+        if (winner.equals("Player X")) playerXScore++;
+        else playerOScore++;
+        scoreText.setText("Player X: " + playerXScore + " | Player O: " + playerOScore);
+    }
+
+    private void showEndGameMessage(String message) {
+        Text endMessage = new Text(message);
+        endMessage.setFont(Font.font(30));
+        endMessage.setFill(Color.FORESTGREEN);
+        endMessage.setX(140); endMessage.setY(250);
+        ((Pane) statusText.getParent()).getChildren().add(endMessage);
+    }
+
+    private int[] findBestMove() {
+        int bestScore = Integer.MIN_VALUE;
+        int[] bestMove = {-1, -1};
+        for (int i = 0; i < 3; i++)
+            for (int j = 0; j < 3; j++)
+                if (buttons[i][j].getText().equals("")) {
+                    buttons[i][j].setText("O");
+                    int score = minimax(0, false);
+                    buttons[i][j].setText("");
+                    if (score > bestScore) {
+                        bestScore = score;
+                        bestMove = new int[]{i, j};
+                    }
+                }
+        return bestMove;
+    }
+
+    private int minimax(int depth, boolean isMax) {
+        if (checkWin("O")) return 10 - depth;
+        if (checkWin("X")) return depth - 10;
+        if (checkForDraw()) return 0;
+
+        int bestScore = isMax ? Integer.MIN_VALUE : Integer.MAX_VALUE;
+        for (int i = 0; i < 3; i++)
+            for (int j = 0; j < 3; j++)
+                if (buttons[i][j].getText().equals("")) {
+                    buttons[i][j].setText(isMax ? "O" : "X");
+                    int score = minimax(depth + 1, !isMax);
+                    buttons[i][j].setText("");
+                    bestScore = isMax ? Math.max(score, bestScore) : Math.min(score, bestScore);
+                }return bestScore;
+    }private boolean checkWin(String p) {
+        for (int i = 0; i < 3; i++)
+            if (buttons[i][0].getText().equals(p) && buttons[i][1].getText().equals(p) && buttons[i][2].getText().equals(p)) return true;
+        for (int i = 0; i < 3; i++)
+            if (buttons[0][i].getText().equals(p) && buttons[1][i].getText().equals(p) && buttons[2][i].getText().equals(p)) return true;
+        if (buttons[0][0].getText().equals(p) && buttons[1][1].getText().equals(p) && buttons[2][2].getText().equals(p)) return true;
+        if (buttons[0][2].getText().equals(p) && buttons[1][1].getText().equals(p) && buttons[2][0].getText().equals(p)) return true;
+        return false;
+    }
+// ========== Car Info ==========
+    private Scene createCarInfoScene() {
+        generateRandomCarData();
+        carsList = FXCollections.observableArrayList(carsData.keySet());
+        carListView = new ListView<>(carsList);
+
+        VBox details = new VBox(10);
+        details.setPadding(new Insets(20));
+
+        Text selectedCarTitle = new Text("Select a car to see details");
+        selectedCarTitle.setFont(Font.font(18));
+
+        Text carInfoText = new Text();
+        selectedCarNumber = new Text();
+        totalCarsText = new Text("Total cars: " + carsList.size());
+
+        Button removeBtn = new Button("Delete Car");
+        removeBtn.setDisable(true);
+
+        removeBtn.setOnAction(e -> {
+            String selectedCar = carListView.getSelectionModel().getSelectedItem();
+            if (selectedCar != null) {
+                carsData.remove(selectedCar);
+                carsList.remove(selectedCar);
+                selectedCarTitle.setText("Select a car to see details");
+                carInfoText.setText("");
+                selectedCarNumber.setText("");
+                removeBtn.setDisable(true);
+                updateCarCount();
+            }
+        });
+
+        carListView.getSelectionModel().selectedItemProperty().addListener((obs, oldVal, newVal) -> {
+            if (newVal != null) {
+                selectedCarTitle.setText(newVal);
+                carInfoText.setText(carsData.get(newVal));
+                selectedCarNumber.setText("Car number: " + (carsList.indexOf(newVal) + 1));
+                removeBtn.setDisable(false);
+            }
+        });
+
+        details.getChildren().addAll(selectedCarTitle, selectedCarNumber, carInfoText, totalCarsText, removeBtn);
+
+        BorderPane pane = new BorderPane();
+        pane.setLeft(carListView);
+        pane.setCenter(details);
+
+        Button backBtn = new Button("Back");
+        backBtn.setOnAction(e -> mainStage.setScene(createMainScene()));
+        pane.setBottom(backBtn);
+        BorderPane.setAlignment(backBtn, Pos.CENTER);
+        BorderPane.setMargin(backBtn, new Insets(10));
+
+        return new Scene(pane, 600, 400);
+    }
+
+    private void generateRandomCarData() {
+        List<String> names = List.of("Toyota Supra", "Ford Mustang", "Nissan GTR", "Chevrolet Camaro", "BMW M3");
+        Random rand = new Random();
+        for (String car : names) {
+            int year = 2000 + rand.nextInt(25);
+            int price = 30000 + rand.nextInt(100000);
+            int hp = 250 + rand.nextInt(300);
+            String fuel = rand.nextBoolean() ? "Gasoline" : "Diesel";
+            String brand = car.split(" ")[0];
+
+            String details = String.format("Brand: %s | Price: $%,d | Horsepower: %d HP | Fuel: %s | Model Year: %d",
+                    brand, price, hp, fuel, year);
+            carsData.put(car, details);
+        }
+    }
+    private void updateCarCount() {
+        totalCarsText.setText("Total cars: " + carsList.size());
+    }
+
+    // ========== Story ==========
+    private Scene createStoryScene() {
+        VBox root = new VBox(20);
+        root.setPadding(new Insets(30));
+        root.setStyle("-fx-background-color: #FFF0F5;");
+
+        Label title = new Label("A Funny Story");
+        title.setFont(Font.font(26));
+       Text storyText = new Text(
+    "Once upon a time, in a colorful forest, a tiny squirrel named Sammy found a shiny acorn.\n" +
+            "But every time he tried to bury it, it would bounce away!\n" +
+    "Sammy laughed and chased the bouncing acorn until it landed on his head like a hat.\n" +
+    "All the forest animals cheered for the Squirrel King with the golden acorn crown!"
+);
+                storyText.setFont(Font.font(16));
+                Button backBtn = new Button("Back");
+                backBtn.setOnAction(e -> mainStage.setScene(createMainScene()));
+        
+                root.getChildren().addAll(title, storyText, backBtn);
+                return new Scene(root, 600, 400);
+            }                                                                                                                           }
