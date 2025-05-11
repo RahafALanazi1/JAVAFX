@@ -1,0 +1,128 @@
+package com.mycompany.fy;
+
+import javafx.application.Application;
+import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
+import javafx.geometry.Insets;
+import javafx.scene.Scene;
+import javafx.scene.control.Button;
+import javafx.scene.control.ListView;
+import javafx.scene.layout.BorderPane;
+import javafx.scene.layout.VBox;
+import javafx.scene.text.Font;
+import javafx.scene.text.Text;
+import javafx.stage.Stage;
+import java.util.*;
+
+public class App extends Application {
+    Map<String, String> carsData = new LinkedHashMap<>(); // Stores car names and details
+    ObservableList<String> carsList; // Holds car names for the ListView
+    Text totalCarsText; // Displays the total number of cars
+    Text selectedCarNumber; // Shows the selected car’s position in the list
+    ListView<String> carListView; // ListView to display cars
+
+    @Override
+    public void start(Stage primaryStage) {
+        generateRandomCarData(); // Generate random car data
+        carsList = FXCollections.observableArrayList(carsData.keySet()); // Populate list with car names
+        carListView = new ListView<>(carsList); // Create ListView for displaying car names
+
+        VBox detailsBox = new VBox(10); // VBox for details section with spacing
+        detailsBox.setPadding(new Insets(20)); // Add padding
+
+        // Title text for selected car details
+        Text selectedCarTitle = new Text("Select a car to see details");
+        selectedCarTitle.setFont(Font.font(18));
+
+        // Text for displaying car details
+        Text carInfoText = new Text();
+        carInfoText.setFont(Font.font(14));
+
+        // Text to display selected car number
+        selectedCarNumber = new Text();
+        selectedCarNumber.setFont(Font.font(14));
+
+        // Text to display total car count
+        totalCarsText = new Text("Total cars: " + carsList.size());
+        totalCarsText.setFont(Font.font(14));
+
+        // Button to remove the selected car
+        Button removeCarBtn = new Button("Delete Car");
+        removeCarBtn.setDisable(true); // Initially disabled
+        
+        removeCarBtn.setOnAction(e -> {
+            String selectedCar = carListView.getSelectionModel().getSelectedItem();
+            if (selectedCar != null) {
+                carsData.remove(selectedCar); // Remove car from data map
+                carsList.remove(selectedCar); // Remove car from list
+                selectedCarTitle.setText("Select a car to see details");
+                carInfoText.setText("");
+                selectedCarNumber.setText("");     
+                
+                removeCarBtn.setDisable(true);
+                updateCarCount(); // Update total count
+            }
+        });
+
+        // Add UI elements to the details box
+        detailsBox.getChildren().addAll(selectedCarTitle, selectedCarNumber, carInfoText, totalCarsText, removeCarBtn);
+
+        // Handle car selection event
+        carListView.getSelectionModel().selectedItemProperty().addListener((obs, oldVal, newVal) -> {
+            if (newVal != null) {
+                selectedCarTitle.setText(newVal);
+                carInfoText.setText(carsData.get(newVal));
+                int index = carsList.indexOf(newVal) + 1;
+                selectedCarNumber.setText("Car number: " + index);
+                removeCarBtn.setDisable(false); // Enable delete button
+            } else {
+                selectedCarNumber.setText("");
+                removeCarBtn.setDisable(true);
+            }
+        });
+
+        // Layout setup
+        BorderPane root = new BorderPane();
+        root.setLeft(carListView);
+        root.setCenter(detailsBox);
+
+        // Create scene and set stage properties
+        Scene scene = new Scene(root, 600, 400);
+        primaryStage.setScene(scene);
+        primaryStage.setTitle("Car Details Viewer");
+        primaryStage.show();
+    }
+
+    // Generates random car data
+    void generateRandomCarData() {
+        List<String> carNames = List.of(
+            "Toyota Supra", "Ford Mustang", "Nissan GTR", "Chevrolet Camaro",
+                "BMW M3", "Audi R8", "Lamborghini Huracan", "Ferrari 488",
+            "Porsche 911", "Dodge Challenger", "McLaren 720S", "Mercedes AMG GT"
+        );
+
+        Random random = new Random();
+        for (String car : carNames) {
+            String brand = car.split(" ")[0]; // Extract brand name
+            int modelYear = 2000 + random.nextInt(24);
+            int price = 30000 + random.nextInt(100000);
+            int horsepower = 250 + random.nextInt(500);
+            String fuelType = random.nextBoolean() ? "Gasoline" : "Diesel";
+            
+            String details = String.format("Brand: %s | Price: $%,d | Horsepower: %d HP | Fuel: %s | Model Year: %d", 
+                                            brand, price, horsepower, fuelType, modelYear);
+            carsData.put(car, details); // Store car details in map
+        }
+    }
+
+    // Updates the total number of cars displayed
+    void updateCarCount() {
+        totalCarsText.setText("Total cars: " + carsList.size()); // Update count display
+    }
+
+    public static void main(String[] args) {
+        launch(args);
+    }
+}
+// End Of JavaFX application
+// Program Finished successfully 
